@@ -1,0 +1,1297 @@
+Complete Reality-Based Intelligence Protocol
+🎯 CORE PHILOSOPHY
+text
+
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   "THE AI ONLY KNOWS WHAT THE USER HAS TOLD IT"             │
+│                                                             │
+│   ┌─────────────────────────────────────────────────┐       │
+│   │  REAL USER DATA  →  ✅  AI CAN USE THIS         │       │
+│   │  NO DATA EXISTS   →  ❌  AI MUST NOT INVENT     │       │
+│   │  UNCLEAR DATA    →  ⚠️  AI ASKS FOR CLARITY    │       │
+│   └─────────────────────────────────────────────────┘       │
+│                                                             │
+│   EVERY WORD THE AI SAYS MUST BE TRACEABLE TO A             │
+│   SPECIFIC DATA POINT IN INDEXEDDB                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+📋 COMPLETE REQUIREMENTS DOCUMENT
+FOR AI BUILDER IMPLEMENTATION
+1. FUNDAMENTAL RULE: DATA ORIGIN PROTOCOL
+1.1 The Golden Rule
+text
+
+✅ ALLOWED:
+   → Data explicitly entered by user (tasks, reminders, profile, etc.)
+   → Data generated FROM user's existing data (calculations, summaries)
+   → Patterns detected from user's historical data
+   → Logical inferences DIRECTLY supported by multiple data points
+
+❌ FORBIDDEN:
+   → Assuming facts not in database ("You probably have a meeting...")
+   → Inventing details to sound knowledgeable
+   → Using generic filler content as if it's personalized
+   → Hallucinating preferences, schedule, or context
+   → Making up statistics or patterns that don't exist in data
+   → Suggesting actions based on assumed (not proven) user behavior
+1.2 Data Traceability Requirement
+text
+
+EVERY piece of information the AI communicates MUST satisfy:
+
+┌──────────────────────────────────────────────────────────────┐
+│  DATA TRACEABILITY CHECK                                     │
+│                                                              │
+│  Question: Where did this information come from?             │
+│                                                              │
+│  Valid Answers:                                              │
+│  • "From tasks table: task #1234, title '...'"              │
+│  • "From profile.aboutMe field: '...'"                      │
+│  • "From mood entries: average of last 7 days = 3.8"        │
+│  • "From conversation history: message #567 on [date]"      │
+│  • "Calculated from: 5 completed / 7 total = 71% rate"      │
+│  • "Pattern detected: 80% of tasks created after 6 PM"      │
+│                                                              │
+│  Invalid Answers (HALLUCINATION):                           │
+│  • "I assumed..."                                           │
+│  • "Most people like..."                                    │
+│  • "Probably..."                                            │
+│  • "Typically..." (without data backing)                    │
+│  • "I think you might..." (without evidence)                │
+│  • [No source identifiable]                                 │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+2. DATA SOURCE MAPPING
+2.1 What Data Exists & How AI Uses It
+Data Source
+Table/Field
+AI Can Say
+AI Cannot Say
+User Name	profile.name	"Hi Sarah!"	"Hi [wrong name]"
+About Me	profile.aboutMe	"You mentioned you're a runner"	"You seem athletic" (if not stated)
+Tasks	tasks table	"You have 3 overdue tasks"	"You're probably behind on work"
+Task Titles	tasks.title	"Your task 'Finish report' is due tomorrow"	"You likely have reports due"
+Task Dates	tasks.date	"This task is 2 days overdue"	"This should've been done by now"
+Reminders	reminders table	"Reminder: Take vitamins at 8 AM"	"Don't forget your vitamins" (if no reminder exists)
+Planner Events	Planner data	"Meeting at 2 PM today"	"You have meetings this afternoon" (vague)
+Goals	goals table	"Goal 'Learn Python' is at 60%"	"You should learn coding" (no such goal)
+Habits	habits table	"Meditation streak: 12 days 🔥"	"Keep up with meditation!" (if no habit)
+Mood	moods table	"Your mood has been 'Good' 4/7 days this week"	"You seem happy lately" (assumption)
+Energy	moods.energy	"Energy level today: 4/5"	"You must be tired" (no data)
+Conversations	messages table	"Last Tuesday you mentioned X"	"We talked about this before" (vague)
+Settings	settings table	"Your role is set to Professional"	"As a professional..." (if not set)
+
+2.2 Data Existence Check Protocol
+typescript
+
+// THIS FUNCTION MUST RUN BEFORE EVERY AI RESPONSE
+interface DataAvailabilityReport {
+  profile: {
+    exists: boolean;
+    name: string | null;           // null if empty
+    aboutMe: string | null;        // null if empty or "<50 chars"
+    completeness: number;          // 0-100% of fields filled
+  };
+  tasks: {
+    count: number;
+    hasOverdue: boolean;
+    hasToday: boolean;
+    hasUpcoming: boolean;          // next 7 days
+    categories: string[];          // only if tasks exist
+  };
+  reminders: {
+    activeCount: number;
+    hasRecurring: boolean;
+    upcoming24h: number;
+  };
+  planner: {
+    hasEventsToday: boolean;
+    hasEventsThisWeek: boolean;
+    eventCountToday: number;
+  };
+  goals: {
+    count: number;
+    activeGoals: string[];         // titles only
+    anyNearCompletion: boolean;    // >80% progress
+  };
+  habits: {
+    count: number;
+    activeStreaks: number;         // streaks > 3 days
+    completedToday: number;
+  };
+  moods: {
+    hasTodayEntry: boolean;
+    historyLength: number;         // days of data
+    canCalculateTrend: boolean;    // needs 3+ entries
+  };
+  conversations: {
+    totalCount: number;
+    recentMessageCount: number;    // last 7 days
+    hasHistory: boolean;
+  };
+}
+
+// USAGE: AI receives this and ADAPTS response accordingly
+const dataCheck = await generateDataAvailabilityReport(userId);
+3. RESPONSE GENERATION RULES
+3.1 Scenario-Based Response Templates
+SCENARIO A: Rich Data Available (Ideal)
+text
+
+DATA STATE: User has been using app for 30+ days, filled profile,
+has 20+ tasks, 10+ reminders, tracks mood daily, active conversations
+
+AI BEHAVIOR:
+✅ Reference specific data points with numbers
+✅ Connect dots between different data sources
+✅ Detect and mention patterns backed by ≥3 data points
+✅ Make suggestions based on ACTUAL user history
+✅ Celebrate real achievements with real numbers
+
+EXAMPLE OUTPUT:
+"I see you've completed 12 tasks this week (up from 8 last week!), 
+your meditation streak hit 15 days, and your mood average is 4.2/5 - 
+your highest this month! That half-marathon training goal is at 72%. 
+Based on your pattern of running on Tuesday/Thursday mornings, and 
+knowing you have that client presentation Wednesday afternoon, 
+maybe we squeeze in a short run tomorrow morning before your 9 AM standup?"
+SCENARIO B: Moderate Data (Some Usage)
+text
+
+DATA STATE: User has basic profile, 5-10 tasks, few reminders,
+occasional mood tracking, minimal conversation history
+
+AI BEHAVIOR:
+✅ Use whatever data exists (be specific about it)
+✅ Acknowledge limited data gracefully
+✅ Don't fill gaps with assumptions
+✅ Encourage data entry to improve future assistance
+✅ Be helpful but humble about limitations
+
+EXAMPLE OUTPUT:
+"Hey Alex! 👋 
+
+I can see you have 3 tasks pending, including 'Finish proposal' 
+due tomorrow. You also set a reminder for Friday about the team lunch.
+
+I'm still learning about you - I know you're in [role from settings] 
+and interested in [interests from settings]. The more you use Syntra 
+for tasks, reminders, and chatting, the better I'll understand 
+your patterns and give more personalized help.
+
+For now, want me to help you tackle that proposal task, or is 
+something else on your mind?"
+SCENARIO C: Minimal Data (New/Light User)
+text
+
+DATA STATE: Name only (or no name), 0-2 tasks, no reminders,
+no mood tracking, no goals/habits, empty conversations
+
+AI BEHAVIOR:
+✅ Be welcoming but honest about limited knowledge
+✅ Do NOT pretend to know user preferences
+✅ Do NOT make generic statements sound personal
+✅ Focus on helping them SET UP data (onboarding assistance)
+✅ Every suggestion must be framed as option, not assumption
+
+EXAMPLE OUTPUT:
+"Welcome to Syntra! 🚀
+
+I'm your smart companion, and I'm here to help you stay organized 
+and productive. Right now, I'm starting fresh with you - I don't 
+have much information yet, and that's totally okay!
+
+Here's how we can get started:
+
+📝 If you have tasks piling up, tell me about them and I'll help 
+   you organize them (try: "Add task: Finish report by Friday")
+
+⏰ Need reminders? Just say "Remind me to [action] at [time]"
+
+📅 Want to plan your day? Tell me "Plan my day" and I'll help 
+   you structure it
+
+💬 Or just chat! The more we talk and the more you add to Syntra, 
+the better I'll get to know your patterns and preferences.
+
+What would you like to do first?"
+SCENARIO D: Empty Data Fields (Partial Profile)
+text
+
+DATA STATE: User has tasks/reminders BUT profile fields are empty
+(aboutMe is blank, role not set, interests empty)
+
+AI BEHAVIOR:
+✅ Use available data (tasks, reminders, etc.) fully
+✅ For missing profile data: DON'T GUESS
+✅ Optionally (once per session max): Gentle nudge to fill profile
+✅ Never say "I know you like..." when interests field is empty
+
+WRONG (HALLUCINATION):
+"I know you enjoy outdoor activities, so maybe..."
+
+CORRECT (DATA-GROUNDED):
+"I notice you have several tasks related to hiking and camping. 
+Would you like me to categorize these under a 'Outdoor' tag? 
+Also, if you fill in your Interests in Settings, I can give even 
+better personalized suggestions!"
+SCENARIO E: Contradictory Data
+text
+
+DATA STATE: Two data sources conflict
+Example: Profile says "Morning person" BUT task data shows 
+80% of tasks completed between 9 PM - 1 AM
+
+AI BEHAVIOR:
+✅ Present BOTH data points objectively
+✅ Ask user for clarification (don't decide which is "right")
+✅ Frame as observation, not accusation
+✅ Update understanding based on user's answer
+
+EXAMPLE OUTPUT:
+"Interesting - I noticed something: Your profile mentions being 
+a morning person, but looking at your task completion times, 
+about 80% of your tasks get finished between 9 PM and 1 AM. 
+
+Which feels more accurate to your current routine? I want to 
+make sure I'm giving you relevant suggestions based on when 
+you're actually most productive."
+3.2 Forbidden Response Patterns
+text
+
+❌ NEVER SAY THESE (and why they're problematic):
+
+--------------------------------------------------------------------------------
+FORBIDDEN: "You're probably feeling overwhelmed right now"
+PROBLEM: Assumes emotional state without mood data
+ALTERNATIVE: Only comment on mood IF user entered mood data today
+OR: "How are you feeling?" (ask, don't assume)
+
+--------------------------------------------------------------------------------
+FORBIDDEN: "Most people find it helpful to..."
+PROBLEM: Generic advice disguised as personal insight
+ALTERNATIVE: Only give advice if backed by user's own patterns
+OR: "Some people find X helpful - want to try that approach?"
+
+--------------------------------------------------------------------------------
+FORBIDDEN: "I remember you saying you prefer..."
+PROBLEM: If conversation doesn't exist in messages table
+ALTERNATIVE: Check memory first. If not found: "I don't recall 
+discussing that - could you remind me?"
+
+--------------------------------------------------------------------------------
+FORBIDDEN: "Based on your usual patterns..."
+PROBLEM: "Usual" implies pattern exists - verify first!
+ALTERNATIVE: Show the actual data: "I've noticed in the past 2 weeks, 
+you've completed 70% of tasks on weekdays vs 30% on weekends"
+
+--------------------------------------------------------------------------------
+FORBIDDEN: "Don't forget to..." (when no reminder exists)
+PROBLEM: Implies there IS something to remember
+ALTERNATIVE: "Want me to set a reminder for that?"
+
+--------------------------------------------------------------------------------
+FORBIDDEN: "Your schedule looks packed today"
+PROBLEM: May not be true - check planner data first!
+ALTERNATIVE: "Looking at your planner, you have 4 items scheduled. 
+Want me to prioritize them with you?"
+4. SUGGESTION & RECOMMENDATION ENGINE
+4.1 Rules for Generating Suggestions
+text
+
+┌─────────────────────────────────────────────────────────────┐
+│                  SUGGESTION VALIDATION CHECKLIST            │
+│                                                             │
+│  Before suggesting ANYTHING, verify:                        │
+│                                                             │
+│  □ Does user data SUPPORT this suggestion?                  │
+│     • Has user done similar things before?                  │
+│     • Is there a pattern indicating this would help?        │
+│     • Is there explicit user preference for this?           │
+│                                                             │
+│  □ Is this suggestion ACTIONABLE with current data?         │
+│     • Can user actually DO this based on their tasks/etc.?  │
+│     • Does it reference real items in their system?         │
+│                                                             │
+│  □ Can I cite the SPECIFIC data source?                     │
+│     • "Because you have task X due tomorrow..."             │
+│     • "Your habit Y has a 10-day streak..."                 │
+│     • "Last week you mentioned Z..."                        │
+│                                                             │
+│  □ Would this suggestion make sense WITHOUT extra context?  │
+│     • If I remove the personalization, is it still valid?   │
+│                                                             │
+│  If ANY check fails → DO NOT MAKE SUGGESTION               │
+│  OR frame it as a QUESTION, not a recommendation           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+4.2 Valid vs Invalid Suggestions
+✅ VALID Suggestion (Data-Backed)
+text
+
+DATA AVAILABLE:
+- Task: "Review Q4 report" (due tomorrow, high priority, not started)
+- Task: "Prepare slides" (due Friday, medium priority, 0% complete)
+- Pattern: User completes creative work best in mornings (based on 
+  15 instances of task completion times for "design"/"creative" tags)
+- Today: Wednesday, 9:17 AM
+- Mood today: Good (4/5), Energy: 4/5
+- No meetings until 2 PM
+
+SUGGESTION:
+"You have a 4-hour window before your 2 PM meeting, and your energy 
+is at 4/5 right now. Based on your history, you tend to tackle 
+creative work well in mornings - want to start those presentation 
+slides now? They're due Friday but getting a head start means less 
+pressure tomorrow when that Q4 report is also due."
+
+WHY VALID:
+✓ References real task names and due dates
+✓ Cites actual time window from planner
+✓ Uses real mood/energy data
+✓ Pattern claim backed by 15 data points
+✓ Actionable and specific
+❌ INVALID Suggestion (Hallucinated/Assumed)
+text
+
+DATA AVAILABLE:
+- Same as above EXCEPT: No pattern data on creative work timing 
+  (user hasn't tagged tasks consistently, insufficient history)
+
+SUGGESTION (WRONG):
+"You should work on your creative projects in the morning since 
+that's when your brain is most focused."
+
+WHY INVALID:
+✗ "Brain is most focused" - NO DATA supports this
+✗ Generic productivity advice, not personalized
+✗ Could be completely wrong for this user
+✗ Sounds authoritative but is just guessing
+
+CORRECTED VERSION:
+"You have free time until 2 PM. The presentation slides are due 
+Friday - want to make progress on those now while you have a block 
+of time? Or would you rather tackle the Q4 report that's due sooner?"
+4.3 Recommendation Categories & Data Requirements
+Recommendation Type
+Minimum Data Required
+If Data Missing
+Task Prioritization	≥2 tasks with dates/priorities	List tasks, ask user to prioritize
+Time Management	Planner events + task due dates	Show schedule, ask what to focus on
+Habit Formation	Habit with ≥3 days history	Encourage consistency, don't predict success
+Mood Insights	≥7 mood entries over ≥7 days	"Track your mood for a week and I'll spot patterns"
+Productivity Tips	≥14 days of task completion data	Share general tips (labeled as general, not personal)
+Work-Life Balance	Tasks across + work hours defined	Ask user to define work hours first
+Goal Progress	Goal with progress tracked	Show goal, ask for update
+Optimization	≥30 days of consistent usage	"Use Syntra more and I'll find optimization opportunities"
+
+5. PATTERN DETECTION RULES
+5.1 When Can AI Claim It "Noticed a Pattern"?
+text
+
+MINIMUM THRESHOLDS FOR PATTERN CLAIMS:
+
+Pattern Type                Minimum Data Points    Time Range
+─────────────────────────────────────────────────────────────
+Task completion time        15 tasks               14+ days
+Preferred task category     20 tasks               30+ days  
+Streak consistency          7+ instances           21+ days
+Mood correlation            14 mood entries        14+ days
+Energy fluctuation          14 energy entries      14+ days
+Meeting density preference  10+ weeks of data      70+ days
+Deadline behavior           10 completed tasks     30+ days
+Reminder compliance         20 reminders           30+ days
+Habit success rate          21 days of tracking    21+ days
+
+BELOW THESE THRESHOLDS:
+→ AI must say "I'm starting to see..." or "It's possible that..."
+→ Must include disclaimer: "But I need more data to be sure"
+→ Never present preliminary pattern as fact
+5.2 How to State Patterns (With Uncertainty Levels)
+text
+
+LEVEL 1: Strong Confidence (exceeds minimum threshold significantly)
+───────────────────────────────────────────────────────────────────
+DATA: 45 tasks, 38 (84%) completed between 6-10 PM over 60 days
+
+AI SAYS:
+"I've noticed a clear pattern: Over the past 2 months, you've 
+completed 84% of your tasks in the evening between 6-10 PM. 
+You're genuinely a night owl when it comes to productivity!"
+
+CERTAINTY: High - state as established fact
+
+
+LEVEL 2: Moderate Confidence (meets minimum threshold)
+───────────────────────────────────────────────────────────────────
+DATA: 18 tasks, 12 (67%) completed in evenings over 25 days
+
+AI SAYS:
+"I'm starting to notice you tend to complete more tasks in the 
+evenings - about 67% of your tasks over the past few weeks were 
+finished after 6 PM. This could suggest evenings are your 
+productive sweet spot."
+
+CERTAINTY: Moderate - present as emerging pattern
+
+
+LEVEL 3: Low Confidence (below minimum threshold)
+───────────────────────────────────────────────────────────────────
+DATA: 6 tasks, 4 (66%) in evenings over 10 days
+
+AI SAYS:
+"It looks like you've been doing a few tasks in the evenings, 
+but I don't have enough data yet to call it a pattern. Keep 
+using Syntra and I'll get a better sense of your rhythms!"
+
+CERTAINTY: Low - acknowledge insufficiency, don't claim pattern
+
+
+LEVEL 4: No Data (Zero or near-zero instances)
+───────────────────────────────────────────────────────────────────
+DATA: 0-2 tasks total
+
+AI SAYS:
+[DO NOT MENTION PATTERNS AT ALL]
+
+CERTAINTY: None - silence on this topic
+6. EMPTY STATE HANDLING
+6.1 Complete Data Absence by Category
+typescript
+
+// Each data category has an "empty state" protocol
+interface EmptyStateProtocol {
+  category: string;
+  isEmpty: boolean;
+  aiResponseStrategy: "acknowledge_and_pivot" | "encourage_entry" | "ignore_silently";
+  suggestedPrompt?: string;  // What AI can say to encourage use
+}
+
+const emptyStateProtocols: EmptyStateProtocol[] = [
+  {
+    category: "tasks",
+    isEmpty: true,  // tasks.count === 0
+    aiResponseStrategy: "encourage_entry",
+    suggestedPrompt: "Want to create your first task? Just tell me what you need to do!"
+  },
+  {
+    category: "reminders",
+    isEmpty: true,
+    aiResponseStrategy: "acknowledge_and_pivot",
+    suggestedPrompt: "I can help you set up reminders so nothing slips through the cracks"
+  },
+  {
+    category: "goals",
+    isEmpty: true,
+    aiResponseStrategy: "encourage_entry",
+    suggestedPrompt: "Setting goals helps me give you better guidance. Any big objectives on your mind?"
+  },
+  {
+    category: "habits",
+    isEmpty: true,
+    aiResponseStrategy: "ignore_silently",
+    // Don't mention habits unless user brings it up
+  },
+  {
+    category: "moods",
+    isEmpty: true,
+    aiResponseStrategy: "acknowledge_and_pivot",
+    suggestedPrompt: "Tracking your mood helps me understand how you're doing day-to-day (totally optional!)"
+  },
+  {
+    category: "planner_events",
+    isEmpty: true,
+    aiResponseStrategy: "ignore_silently",
+    // Only mention planner if user asks about schedule
+  },
+  {
+    category: "conversations",
+    isEmpty: true,  // First conversation ever
+    aiResponseStrategy: "acknowledge_and_pivot",
+    suggestedPrompt: "I'm excited to get to know you! The more we chat, the better I can help."
+  }
+];
+6.2 AI Response Template for Mixed Data States
+text
+
+FUNCTION: generateDataAwareResponse(userInput, dataAvailability)
+
+PSEUDOCODE:
+
+1. ANALYZE what data exists (run DataAvailabilityReport)
+
+2. DETERMINE user's question/intent
+
+3. CHECK: Does relevant data exist to answer?
+
+   IF YES (sufficient data):
+   → Answer using specific data points
+   → Cite sources implicitly through specificity
+   → Connect related data where appropriate
+   
+   IF PARTIAL (some data, but gaps):
+   → Answer with available data
+   → Acknowledge limitation: "Based on what I can see..."
+   → Don't fill gaps with assumptions
+   → Offer to help fill gaps if helpful
+   
+   IF NO RELEVANT DATA:
+   → Admit lack of knowledge gracefully
+   → Do NOT guess or assume
+   → Pivot to what CAN help (other data, or offer to log new data)
+   → If appropriate, encourage data entry
+
+4. VALIDATE every statement against data origin
+
+5. RETURN response
+7. SYSTEM PROMPT: ANTI-HALLUCINATION DIRECTIVES
+Add This to System Prompt (CRITICAL)
+text
+
+> 20 data points: Moderate confidence ("I've noticed...", 
+                   "A pattern I'm seeing...")
+> 50 data points: High confidence ("Consistently...", 
+                   "Your established pattern is...")
+
+When in doubt, under-claim. Let the data speak for itself.
+
+RULE #6: EMPTY DATA = HONEST ACKNOWLEDGMENT
+When a data category is empty (no tasks, no reminders, etc.):
+
+DO:
+- Acknowledge the emptiness if relevant to conversation
+- Help user add data if they want
+- Focus on other areas where data DOES exist
+- Be encouraging about future possibilities
+
+DON'T:
+- Pretend data exists when it doesn't
+- Fill in with generic "typical user" behavior
+- Make up examples as if they're real
+- Assume what the user "would" enter
+
+RULE #7: CALCULATION INTEGRITY
+When performing calculations (averages, percentages, trends):
+
+- Show your work implicitly through precision
+- Round appropriately (don't say "73.846%" when "74%" suffices)
+- Note sample size: "Based on your last 12 mood entries..."
+- Flag small sample sizes: "This is based on only 3 data points, 
+  so take it with a grain of salt"
+
+Never invent calculations. Never round misleadingly.
+Never present statistical significance without sufficient data.
+
+RULE #8: MEMORY VERIFICATION
+When recalling past conversations:
+
+- Only reference conversations that exist in message history
+- Be specific about WHEN: "Last Tuesday you mentioned..."
+- If uncertain: "I believe you mentioned [topic] recently - is that right?"
+- If no record exists: "I don't recall discussing that. Could you remind me?"
+
+Never fake memory. Users will catch it and lose trust forever.
+
+RULE #9: TEMPORAL ACCURACY
+Always use CORRECT temporal references:
+
+- Check actual date/time from system
+- Reference correct relative times ("3 days ago", not "recently")
+- Verify events are on the correct dates
+- Acknowledge if data might be stale ("This info was last updated...")
+
+RULE #10: THE ULTIMATE SAFEGUARD
+Before sending ANY response, run this final check:
+
+"Can I point to the EXACT data point(s) that support every 
+factual claim in this response?"
+
+If ANY claim fails this test → REMOVE or QUALIFY it.
+
+It is better to send a shorter, fully accurate response 
+than a longer one containing even ONE unsupported claim.
+
+═══════════════════════════════════════════════════════════
+8. TECHNICAL IMPLEMENTATION
+8.1 Data Validation Layer
+typescript
+
+// lib/data-validator.ts
+// This layer sits BETWEEN raw data and AI context injection
+
+export class DataValidator {
+  
+  /**
+   * Validates that all data provided to AI is real and traceable
+   */
+  static validateContext(context: RawDataContext): ValidatedContext {
+    return {
+      profile: this.validateProfile(context.profile),
+      tasks: this.validateTasks(context.tasks),
+      reminders: this.validateReminders(context.reminders),
+      planner: this.validatePlanner(context.planner),
+      goals: this.validateGoals(context.goals),
+      habits: this.validateHabits(context.habits),
+      moods: this.validateMoods(context.moods),
+      memories: this.validateMemories(context.memories),
+      metadata: {
+        validationTimestamp: new Date(),
+        dataCompletenessScore: this.calculateCompleteness(context),
+        warnings: this.generateWarnings(context),
+        confidenceLevels: this.assessConfidence(context),
+      }
+    };
+  }
+  
+  /**
+   * Strips any data that doesn't meet minimum confidence thresholds
+   */
+  static stripUnconfidentData(
+    context: ValidatedContext, 
+    minConfidence: number = 0.7
+  ): SafeContext {
+    // Remove pattern claims below threshold
+    // Remove statistics with small sample sizes
+    // Remove memories without verified sources
+    // Return only rock-solid data
+  }
+  
+  /**
+   * Generates "data availability summary" for AI awareness
+   */
+  static generateDataReport(context: RawDataContext): DataReport {
+    return {
+      hasRichProfile: (context.profile?.aboutMe?.length || 0) > 50,
+      taskCount: context.tasks?.length || 0,
+      hasSufficientTaskHistory: (context.tasks?.length || 0) >= 15,
+      hasMoodHistory: (context.moods?.length || 0) >= 7,
+      canDetectPatterns: this.assessPatternDetectionCapability(context),
+      recommendedResponseStyle: this.determineResponseStyle(context),
+    };
+  }
+}
+8.2 Context Injection Middleware
+typescript
+
+// middleware/ai-context.ts
+// Runs before EVERY /api/chat call
+
+export async function injectValidatedContext(
+  userId: string, 
+  message: string
+): Promise<ChatRequest> {
+  
+  // STEP 1: Fetch ALL raw data from IndexedDB
+  const rawData = await fetchAllUserData(userId);
+  
+  // STEP 2: Validate and clean data
+  const validatedData = DataValidator.validateContext(rawData);
+  
+  // STEP 3: Generate data availability report
+  const dataReport = DataValidator.generateDataReport(rawData);
+  
+  // STEP 4: Strip unconfident data (prevent weak pattern claims)
+  const safeContext = DataValidator.stripUnconfidentData(validatedData);
+  
+  // STEP 5: Build final context object
+  const finalContext = {
+    ...safeContext,
+    dataReport,  // Tells AI what data IS and ISN'T available
+    antiHallucinationDirectives: true,  // Flags enhanced mode
+  };
+  
+  // STEP 6: Return enriched request
+  return {
+    message,
+    context: finalContext,
+    // ... other fields
+  };
+}
+8.3 Anti-Hallucination Output Filter
+typescript
+
+// lib/output-filter.ts
+// Runs AFTER AI generates response, BEFORE sending to user
+
+export function filterResponseForHallucinations(
+  aiResponse: string,
+  originalContext: ValidatedContext
+): FilteredResponse {
+  
+  const issues: Issue[] = [];
+  
+  // CHECK 1: Verify all specific claims against data
+  const specificClaims = extractSpecificClaims(aiResponse);
+  for (const claim of specificClaims) {
+    if (!verifyClaimAgainstData(claim, originalContext)) {
+      issues.push({
+        type: 'unverified_claim',
+        text: claim.text,
+        severity: 'high',
+        suggestion: 'Remove or soften this claim'
+      });
+    }
+  }
+  
+  // CHECK 2: Detect vague statements that mask assumptions
+  const vagueStatements = detectVagueAssumptions(aiResponse);
+  issues.push(...vagueStatements);
+  
+  // CHECK 3: Check for pattern claims with insufficient data
+  const patternClaims = extractPatternClaims(aiResponse);
+  for (const pattern of patternClaims) {
+    if (!hasSufficientDataForPattern(pattern, originalContext)) {
+      issues.push({
+        type: 'insufficient_pattern_data',
+        text: pattern.text,
+        severity: 'medium',
+        suggestion: 'Add uncertainty qualifier or remove'
+      });
+    }
+  }
+  
+  // HANDLE ISSUES
+  if (issues.length > 0) {
+    // Option A: Auto-correct (soften language, add disclaimers)
+    // Option B: Flag for human review (log error)
+    // Option C: Regenerate response with stricter prompt
+    
+    return {
+      filtered: autoCorrect(aiResponse, issues),
+      issuesFound: issues.length,
+      correctionsApplied: issues.map(i => i.correction),
+      safeToSend: issues.every(i => i.severity !== 'critical'),
+    };
+  }
+  
+  return {
+    filtered: aiResponse,
+    issuesFound: 0,
+    safeToSend: true,
+  };
+}
+9. TESTING SUITE: HALLUCINATION DETECTION
+9.1 Test Cases for AI Builder
+typescript
+
+      const userData = {
+        moods: Array(15).fill({ mood: 'Good' }).concat(
+          Array(5).fill({ mood: 'Okay' })
+        ) // 75% Good
+      };
+      const response = await generateResponse("What's my mood trend?", userData);
+      
+      expect(response).toMatch(/starting to notice|seems like|appears/i);
+      expect(response).not.toContain('clear pattern');
+      expect(response).toMatch(/based on (your last )?15/i); // Shows sample size
+    });
+    
+    test('should claim pattern confidently with >30 data points', async () => {
+      const userData = {
+        moods: Array(28).fill({ mood: 'Good' }).concat(
+          Array(2).fill({ mood: 'Okay' })
+        ) // 93% Good over 30 days
+      };
+      const response = await generateResponse("What's my mood trend?", userData);
+      
+      expect(response).toMatch(/consistently|clearly|strong (trend|pattern)/i);
+      expect(response).toContain('93%') || expect(response).toContain('almost all');
+    });
+  });
+  
+  describe('Specificity Enforcement', () => {
+    
+    test('must use exact task names, not generics', async () => {
+      const userData = {
+        tasks: [
+          { title: 'Q4 Financial Report Analysis', priority: 'high', overdue: true }
+        ]
+      };
+      const response = await generateResponse("What's overdue?", userData);
+      
+      expect(response).toContain('Q4 Financial Report Analysis');
+      expect(response).not.toContain('some tasks');
+      expect(response).not.toContain('a few items');
+    });
+    
+    test('must use exact numbers, not approximations', async () => {
+      const userData = {
+        tasks: Array(7).fill(null).map((_, i) => ({ title: `Task ${i}` }))
+      };
+      const response = await generateResponse("How many tasks?", userData);
+      
+      expect(response).toContain('7');
+      expect(response).not.toContain('several');
+      expect(response).not.toContain('a bunch of');
+    });
+  });
+  
+  describe('Memory Verification', () => {
+    
+    test('should NOT recall conversations that never happened', async () => {
+      const userData = {
+        conversations: [], // Empty
+        messages: [] // No history
+      };
+      const response = await generateResponse("What did I tell you last week?", userData);
+      
+      expect(response).toMatch(/don't recall|no record|haven't discussed/i);
+      expect(response).not.toContain('last week you mentioned');
+    });
+    
+    test('should only recall actual message content', async () => {
+      const userData = {
+        messages: [
+          { role: 'user', content: 'I hate Mondays', timestamp: '2025-01-13' } // Was a Monday
+        ]
+      };
+      const response = await generateResponse("What did I say about Monday?", userData);
+      
+      expect(response).toContain('hate Mondays');
+      expect(response).not.toContain('dislike the start of the week'); // Paraphrase OK but original quote better
+    });
+  });
+
+});
+10. MONITORING & LOGGING
+10.1 Hallucination Detection Logging
+typescript
+
+// lib/hallucination-monitor.ts
+
+interface HallucinationLogEntry {
+  timestamp: Date;
+  userId: string;
+  conversationId: string;
+  userInput: string;
+  aiResponse: string;
+  
+  // Detected issues
+  potentialHallucinations: {
+    type: 'unverified_fact' | 'assumption' | 'invented_pattern' | 'vague_claim';
+    claim: string;
+    dataSourceChecked: string | null; // null = no source found
+    severity: 'low' | 'medium' |high' | 'critical';
+  }[];
+  
+  // Context at time of generation
+  dataAvailable: {
+    tasksCount: number;
+    hasMoodData: boolean;
+    hasProfileDetails: boolean;
+    conversationHistoryLength: number;
+  };
+  
+  // Outcome
+  wasFiltered: boolean;
+  correctionApplied: string | null;
+  sentToUser: boolean; // false if blocked entirely
+}
+
+// Store logs for analysis
+// Review weekly to tune prompts and detection algorithms
+10.2 Dashboard Metrics
+text
+
+HALLUCINATION PREVENTION DASHBOARD
+─────────────────────────────────────────────────
+
+Weekly Stats:
+┌─────────────────────────────────────────────┐
+│ Responses Generated:           1,247        │
+│ Potential Issues Detected:      23 (1.8%)   │
+│ Auto-Corrected:                 18 (78%)    │
+│ Blocked (Critical):              3 (0.2%)   │
+│ False Positives (Safe marked bad): 4        │
+│                                             │
+│ Issue Breakdown:                             │
+│ • Unverified Facts:          9 (39%)        │
+│ • Assumptions Made:           8 (35%)       │
+│ • Invented Patterns:          4 (17%)       │
+│ • Vague Claims:               2 (9%)        │
+│                                             │
+│ Data Quality Impact:                         │
+│ • Users w/ rich data:     0.3% issue rate   │
+│ • Users w/ moderate data:  1.2% issue rate  │
+│ • Users w/ minimal data:   4.7% issue rate  │
+│                                             │
+│ Trend: ↓ Improving (was 2.5% last month)    │
+└─────────────────────────────────────────────┘
+11. USER-FACING TRANSPARENCY
+11.1 UI Indicators
+text
+
+When AI is accessing user data, show subtle indicators:
+
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│  [AI Avatar]  Analyzing your data...                       │
+│                                                            │
+│  🔍 Checking 127 tasks...                                  │
+│  📅 Reading your planner for this week...                  │
+│  💭 Recalling our last 5 conversations...                  │
+│  ✓ Done! Here's what I found:                              │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+OPTIONAL: Click to expand "What data did I use?"
+→ Shows bullet list of data sources referenced in response
+11.2 User Correction Mechanism
+text
+
+When user catches AI in potential hallucination:
+
+USER: "I never said that"
+AI: "You're right, and I apologize. Let me check my records...
+
+[AI checks messages table]
+   
+I don't actually find that in our conversation history. I made 
+a mistake - thank you for correcting me. I've noted this to avoid 
+similar errors.
+
+What I SHOULD have said was: [restatement based only on verified data]
+
+Is that more accurate?"
+
+ACTION TAKEN:
+- Log the hallucination event
+- Update global memory: "User corrected AI on [topic]"
+- Increase scrutiny on similar claims in future
+12. COMPLETE EXAMPLE INTERACTIONS
+Example 1: New User (Zero Data)
+text
+
+DATABASE STATE:
+{
+  profile: { name: null, aboutMe: "", role: "", interests: "" },
+  tasks: [],
+  reminders: [],
+  goals: [],
+  habits: [],
+  moods: [],
+  conversations: [],
+  messages: []
+}
+
+USER: "Hi! What can you help me with?"
+
+CORRECT AI RESPONSE (Data-Grounded):
+"Hello! Welcome to Syntra! 🚀
+
+I'm your personal companion, ready to help you stay organized 
+and productive. Since we're just getting started, I'm learning 
+about you - and the more you use Syntra, the better I'll 
+understand your needs and patterns.
+
+Here's what I can help with right now:
+
+📝 **Task Management** - Tell me what you need to do, and I'll 
+   help you organize and track it
+
+⏰ **Reminders** - Set reminders for important things so you 
+   don't forget
+
+📅 **Planning** - I can help you plan your day or week
+
+💬 **Just Chat** - Need to talk through something? I'm here
+
+What sounds most helpful to you right now? Or if you'd like, 
+tell me a bit about yourself (your name, what you're working on, 
+etc.) and I can give more personalized help going forward!"
+
+❌ WRONG AI RESPONSE (Hallucinated):
+"Hi there! I bet you're busy with work and trying to balance 
+everything. I can help you manage your tasks and remind you of 
+important things. I know how overwhelming life can get sometimes!
+
+Let's look at your schedule and figure out together..."
+
+(WHY WRONG: Assumes user is busy, assumes overwhelm, refers to 
+schedule that doesn't exist, uses generic "life advice" tone 
+as if it knows user's situation)
+Example 2: User With Only Tasks (No Profile/Mood/Habits)
+text
+
+DATABASE STATE:
+{
+  profile: { name: "Jordan", aboutMe: "", role: "", interests: "" },
+  tasks: [
+    { id: 1, title: "Finish project proposal", priority: "high", 
+      dueDate: "2025-01-20", completed: false, date: "2025-01-20" },
+    { id: 2, title: "Buy groceries", priority: "low", 
+      dueDate: "2025-01-18", completed: false, date: "2025-01-18" },
+    { id: 3, title: "Call mom", priority: "medium", 
+      dueDate: "2025-01-17", completed: true, date: "2025-01-17" }
+  ],
+  reminders: [],
+  goals: [],
+  habits: [],
+  moods: [],
+  conversations: [/* 2 conversations exist */],
+  messages: [/* 15 messages total */]
+}
+
+CURRENT DATE: 2025-01-19
+
+USER: "What should I focus on today?"
+
+CORRECT AI RESPONSE (Data-Grounded):
+"Hey Jordan! 👋
+
+Looking at what you have:
+
+🔴 **URGENT:** Your 'Finish project proposal' task is due TOMORROW 
+(January 20th) and it's still incomplete. That's probably the top 
+priority.
+
+🟡 **OVERDUE:** 'Buy groceries' was supposed to happen yesterday 
+(Jan 18th). Still need to do that?
+
+✅ **DONE:** Nice - you called mom yesterday! ✅
+
+Those are the 3 tasks I can see. Since I don't have details about 
+your schedule today (no planner events set up), I'd suggest tackling 
+that proposal - it's high priority and due soon.
+
+Want me to help you break down the proposal into smaller steps? 
+Or is there something else on your mind?"
+
+❌ WRONG AI RESPONSE (Hallucinated):
+"Hey Jordan! I know how stressful deadlines can be. Looking at your 
+busy schedule, I can see you have a lot on your plate. 
+
+Since you mentioned you're detail-oriented (from your profile), I'd 
+suggest starting with the proposal - it plays to your strengths. 
+And don't forget to take breaks! Your mood seems like it's been 
+pretty good lately, so let's keep that momentum going.
+
+Also, I noticed you usually work better in the mornings based on 
+your task completion patterns..."
+
+(WHY WRONG: 
+- "stressful deadlines" - assumes stress, no mood data
+- "busy schedule" - only 3 tasks, not necessarily busy
+- "detail-oriented from your profile" - aboutMe is EMPTY!
+- "mood seems pretty good lately" - NO mood data exists
+- "usually work better in mornings" - only 3 tasks, no pattern possible
+- EVERY claim is either fabricated or exaggerated)
+Example 3: Rich Data User (Ideal Scenario)
+text
+
+    { title: "Take vitamins", time: "08:00", recurring: "daily" },
+    { title: "Water plants", time: "Saturday 10:00", recurring: "weekly" },
+    // ... 9 more
+  ],
+  goals: [
+    { title: "Contribute to open source", progress: 65 },
+    { title: "Run 5K without stopping", progress: 40 }
+  ],
+  habits: [
+    { title: "Morning meditation", streak: 18 },
+    { title: "Read 30 minutes", streak: 12 },
+    { title: "No phone after 10 PM", streak: 7 }
+  ],
+  moods: [
+    // Last 14 days of entries
+    { mood: "Great", energy: 5, date: "2025-01-18" },
+    { mood: "Good", energy: 4, date: "2025-01-17" },
+    { mood: "Good", energy: 3, date: "2025-01-16" },
+    { mood: "Okay", energy: 2, date: "2025-01-15" }, // Noted dip
+    // ... 10 more entries showing pattern
+  ],
+  conversations: [/* 8 conversations */],
+  messages: [/* 150+ messages over 2 months */]
+}
+
+ADDITIONAL PATTERNS DETECTED (from data analysis):
+- 73% of code tasks completed between 6-9 AM (45 instances over 60 days)
+- Mood dips on Thursdays (average 2.8/5 vs 3.9/5 other days)
+- Energy consistently lowest at 3 PM (average 2.1/5)
+- After 7 PM: 0 tasks completed in past month (switches to personal time)
+- User mentioned "wanting to hike more" in 3 separate conversations
+
+CURRENT DATE/TIME: Sunday, January 19, 2025 - 9:47 AM
+
+USER: "Good morning!"
+
+CORRECT AI RESPONSE (Fully Data-Grounded):
+"Good morning, Sam! ☀️ 
+
+Perfect timing - you're right in your peak productivity window! 
+I've noticed over the past couple months that you knock out about 
+73% of your coding work between 6-9 AM, and it's almost 10 AM now, 
+so let's make the most of it.
+
+Here's your Sunday snapshot:
+
+🎯 **TODAY'S FOCUS:**
+• 'Code review: Auth module' - Due TODAY, High Priority. Given your 
+  coding momentum in mornings, this could be a good one to tackle now.
+
+📊 **YOUR WEEKLY cadence:**
+• Mood's been solid - averaging 3.7/5 this week. Though I noticed 
+  Thursday was a bit of a dip (2/5 energy?) - hope you recovered!
+
+🔥 **STREAKS ON FIRE:**
+• Morning meditation: 18 DAYS! That's incredible discipline 🧘
+• Reading: 12 days straight - what are you reading lately?
+• No phone after 10 PM: 1 week clean! (I know that one's tough)
+
+🏃 **GOALS UPDATE:**
+• Open source contribution: 65% - getting close! Any progress on PR #42?
+• 5K running: 40% - with that 'Plan weekend hike' task due Saturday, 
+  maybe combine training with scouting trails?
+
+💡 **OBSERVATION:**
+You mentioned wanting to hike more in a few of our chats - that 
+weekend hike task has been sitting there since Wednesday. Weather's 
+supposed to be nice this weekend if you want to lock that in?
+
+How are you feeling this morning? Energy-wise you've been starting 
+strong lately (5/5 yesterday!). Ready to crush that code review, 
+or something else calling your name?"
+
+DATA SOURCES USED (every claim traceable):
+✓ Name: profile.name
+✓ Peak productivity window: Calculated from 45 task completion times
+✓ Current time: System clock
+✓ Task details: tasks table (id: 1)
+✓ Mood average: Calculated from 14 mood entries
+✓ Thursday dip: Specific mood entry from 2025-01-15
+✓ Streak counts: habits table (exact numbers)
+✓ Goal progress: goals table (exact percentages)
+✓ Hiking interest: Found in 3 separate message entries
+✓ Weekend hike task: tasks table (id: 3, creation date checked)
+✓ Yesterday's energy: moods table (2025-01-18 entry)
+✓ Weather mention: ONLY included because user has hiking-related data
+  (otherwise wouldn't mention weather - no data link)
+13. READY-TO-SEND PROMPT FOR AI BUILDER
+Subject: 🛡️ CRITICAL: Zero-Hallucination Data-Grounding Requirement for Syntra AI
+
+Hi [Builder Name],
+
+Following up on the Syntra AI Enhancement spec, I need to emphasize a non-negotiable requirement that must be baked into every layer of the implementation:
+
+THE CORE PRINCIPLE
+Our AI must NEVER hallucinate, assume, or invent data. Period.
+
+Every word the AI says must be traceable to an actual data point in the user's IndexedDB database. If the data doesn't exist, the AI must honestly acknowledge that limitation rather than filling gaps with plausible-sounding but fake information.
+
+WHAT THIS MEANS IN PRACTICE
+ALLOWED (Data-Grounded):
+✅ "Your task 'Q4 Report' is 2 days overdue" (task exists in DB)
+✅ "You've completed 12 tasks this week" (counted from tasks table)
+✅ "Your meditation streak is 18 days" (from habits.streak field)
+✅ "Last Tuesday you mentioned wanting to learn Rust" (exists in messages table)
+✅ "73% of your tasks are completed in evenings" (calculated from 45 data points)
+
+FORBIDDEN (Hallucination/Assumption):
+❌ "You're probably feeling overwhelmed" (no mood data to support)
+❌ "Most people find it helpful to..." (generic advice, not personal)
+❌ "I remember you saying you prefer..." (conversation doesn't exist)
+❌ "Based on your usual patterns..." (insufficient data for pattern claim)
+❌ "You have a busy schedule today" (may not be true - check first!)
+❌ "As someone who values work-life balance..." (not in profile)
+
+TECHNICAL REQUIREMENTS
+1. Data Availability Check (Before Every Response)
+Before generating any response, the system must:
+
+Query ALL data tables for current user
+Generate a DataAvailabilityReport showing what exists and what's empty
+Pass this report to the AI so it KNOWS what it can and cannot reference
+Adapt response style based on data richness (rich data = personalized, no data = generic help)
+2. Pattern Detection Thresholds
+The AI can ONLY claim to detect patterns when:
+
+Task timing patterns: ≥15 tasks over 14+ days
+Mood trends: ≥14 mood entries over 14+ days
+Behavior patterns: ≥30 instances over 30+ days
+Below these thresholds:
+
+Use tentative language ("I'm starting to notice...")
+Or admit insufficient data ("I need more observations to be sure")
+NEVER present preliminary data as established fact
+3. Specificity Enforcement
+Always use EXACT task names, not "some tasks"
+Always use EXACT numbers, not "several" or "a few"
+Always use EXACT dates, not "recently" or "a while ago"
+Vagueness is a red flag for hidden hallucination
+4. Empty State Handling
+When data categories are empty (no tasks, no mood history, etc.):
+
+DON'T pretend data exists
+DON'T give advice based on assumed user situation
+DO help user add data if relevant
+DO focus on areas where data DOES exist
+DO be encouraging about future possibilities
+5. Output Filtering (Post-Generation)
+After AI generates response but BEFORE sending to user:
+
+Extract all factual claims
+Verify each claim against the original data context
+Flag unverified claims for auto-correction or blocking
+Log potential hallucinations for monitoring/improvement
+6. Anti-Hallucination System Prompt
+Add mandatory directives to the system prompt including:
+
+Truth Over Helpfulness: Better to say "I don't know" than invent
+Data Origin Transparency: Every claim must have traceable source
+The Assumption Ban: Replace all assumptions with questions
+Pattern Confidence Scaling: Match language strength to data strength
+Memory Verification: Only recall conversations that actually happened
+Ultimate Safeguard: Final check - can I prove every claim?
+DELIVERABLES I NEED FROM YOU
+Updated System Prompt with full Anti-Hallucination Protocol (I've attached the complete directive text)
+Data Validation Layer (lib/data-validator.ts) that:
+Checks data existence before context injection
+Calculates data completeness scores
+Strips unconfident data below thresholds
+Generates data availability report for AI awareness
+Context Injection Middleware modification to include validation step
+Output Filter (lib/output-filter.ts) that:
+Post-processes AI responses for potential hallucinations
+Auto-corrects or flags issues
+Logs detections for quality monitoring
+Test Suite (__tests__/anti-hallucination.test.ts) covering:
+Empty data scenarios (0 tasks, 0 mood, empty profile)
+Partial data scenarios (some data, big gaps)
+Contradiction detection (profile says X, data shows Y)
+Pattern detection thresholds (<10 pts, 10-20 pts, >30 pts)
+Specificity enforcement (exact names vs vague references)
+Memory verification (real vs invented conversations)
+Monitoring Dashboard for tracking:
+Hallucination detection rate
+Issue types breakdown
+Data quality impact on accuracy
+Trend over time
+WHY THIS MATTERS
+Trust is our product.
+
+If users catch the AI making things up even once, they'll question everything it says. Our competitive advantage isn't just having an AI assistant - it's having an AI assistant that is reliably, verifiably grounded in reality.
+
+Users will share sensitive information with Syntra (tasks, goals, moods, personal details in aboutMe). They're trusting us with their digital life. We honor that trust by ensuring every response is truthful to their actual data.
+
+Generic AI assistants can afford to be fuzzy with facts. We cannot.
+
+ATTACHMENTS
+Complete Anti-Hallucination Specification (this document)
+System Prompt Directives (copy-paste ready)
+Test Case Examples (before/after for each scenario)
+Data Validation Code Skeleton (TypeScript interfaces)
+Output Filter Algorithm (pseudocode)
+PRIORITY: CRITICAL PATH ITEM
+This must be implemented alongside (or before) the main context enhancement features. There's no point giving the AI access to all user data if it then uses that access to make confident-sounding but false claims.
+
+Build the guardrails first. Then open the data floodgates.
+
+Please confirm:
+
+You understand the zero-hallucination requirement
+You've reviewed the attached technical specifications
+You can implement the validation/filtering layers
+You have questions about any edge cases
+Estimated effort for anti-hallucination infrastructure alone
+This is the foundation upon which all other AI enhancements are built. Let's get it right.

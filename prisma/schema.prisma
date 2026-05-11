@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  title     String    @default("New Chat")
+  botName   String    @default("AI Buddy")
+  icon      String    @default("bot")
+  pinned    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  role           String       // "user" or "assistant"
+  content        String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  time        String   @default("")
+  location    String   @default("")
+  participants String  @default("")
+  category    String   @default("general")  // general, meeting, design, code, personal
+  completed   Boolean  @default(false)
+  date        String   // ISO date string YYYY-MM-DD
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Reminder {
+  id               String  @id @default(cuid())
+  title            String
+  description      String  @default("")
+  time             String  @default("")
+  icon             String  @default("bell") // clock, bell, calendar
+  completed        Boolean @default(false)
+  recurring        String  @default("") // '', 'daily', 'weekly', 'monthly', 'custom'
+  recurringEndDate String  @default("") // ISO date for when recurring should stop (empty = forever)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model UserProfile {
+  id        String @id @default("default")
+  name      String @default("John Smith")
+  status    String @default("Premium Member")
+  language  String @default("en")
+  updatedAt DateTime @updatedAt
+}
+
+model UserSettings {
+  id                String  @id @default("default")
+  notifications     Boolean @default(true)
+  darkMode          Boolean @default(true)
+  privateMode       Boolean @default(false)
+  locationServices  Boolean @default(false)
+  updatedAt         DateTime @updatedAt
+}
